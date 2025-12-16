@@ -132,4 +132,5 @@ python models/ensemble_mlp.py \
 | MLP + ESM2               | Outliers filtering          | 0.192           |
 | MLP + ESM2 + Regulation  | Embeddings + regularization | 0.195           |
 | Ensemble (BLAST + ESM2)  | Branch bonus ensemble       | 0.243           |
-| Ensemble (BLAST + ProtT5)| Branch bonus ensemble       | **Best score: 0.252** |
+| Ensemble (BLAST + ProtT5)| Branch bonus ensemble       | 0.249           |
+| **Ensemble (Multiple models)**| **KNN + MLP(3 embedding) + stats-based**| **0.252**  |
