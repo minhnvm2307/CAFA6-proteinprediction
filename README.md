@@ -1,7 +1,8 @@
 # CAFA-6 Protein function Prediction
 
 > Team: Neo_Junai_INT34057
-> Ranking: 510
+
+> Ranking: ~500
 
 ## Setup
 ### Prerequisites
@@ -29,6 +30,16 @@ conda activate proteinprediction
 uv sync
 or
 pip install -r requirements.txt
+```
+
+3. Download dataset
+
+```
+# Download zipped dataset from github-release
+wget https://github.com/minhnvm2307/CAFA6-proteinprediction/releases/download/dataset/dataset.zip
+
+# Unzip files directly into ./data
+unzip dataset.zip -d data
 ```
 
 ## Key Dependencies
@@ -75,30 +86,50 @@ python -m blast.run_blastp
 ```
   Creates `blast_pred.tsv` in the repo root.
 
-### 3) Ensembling example
+### 3) Model training/prediction (flat scripts)
 
-- Place submission files in `data/checkpoint/submissions/` and adjust the list in `ensemble/run_example.py` if needed.
-- Combine them with the branch-based ensemble:
+All entrypoints live under `models/` and accept `--mode train`, `--mode predict`, or `--mode train_and_predict` (default). Logging is enabled by default.
+
+Traditional baselines (CTD + dipeptide features from FASTA):
 ```
-python ensemble/run_example.py
+# KNN baseline
+python models/baseline_knn.py --data-root data --submission submission_knn.tsv
+
+# Linear SVM baseline
+python models/baseline_svm.py --data-root data --submission submission_svm.tsv
 ```
-  Writes `ensemble_submission.tsv`.
 
-### 4) Traditional ML models
+Embedding MLPs (precomputed embeddings under `data/embedding/{esm,prottrans,protbert}`):
+```
+# ESM2 MLP
+python models/esm2_mlp.py --data-root data --submission submission_esm.tsv
 
-| Model        | Features / Notes     | Fmax  |
-|--------------|----------------------|-------|
-| SVM + Blast  | Handcrafted features | 0.140  |
-| KNN          | k = 200, Sequence embedding              | 0.138  |
-| KNN + BLAST  | Hybrid similarity    | 0.195   |
+# ProtT5 MLP
+python models/prott5_mlp.py --data-root data --submission submission_prott5.tsv
 
-### 5) Advanced models
+# ProtBERT MLP
+python models/protbert_mlp.py --data-root data --submission submission_protbert.tsv
+```
+Common flags: `--epochs`, `--batch-size`, `--lr`, `--threshold`, `--model-path`.
+
+Branch-based ensembling of submission files:
+```
+python models/ensemble_mlp.py \
+  --go-path data/Train/go-basic.obo \
+  --submissions data/checkpoint/submissions/submission_t5.tsv data/checkpoint/submissions/submission_blast.tsv \
+  --output ensemble_submission.tsv
+```
+
+### 4) Model cheat sheet
 
 | Model                    | Features / Notes            | Status / Metric |
 |--------------------------|-----------------------------|-----------------|
-| MLP + ProtBert  | Full class, no filter | 0.144    |
-| MLP + ProtT5  | Outliers filtering   | 0.208             |
-| MLP + ESM2    | Outliers filtering  | 0.192             |
-| MLP + ESM2 + Regulation  | Embeddings + regularization | 0.195             |
-| Ensemble (BLAST + ESM2)| Branch bonus ensemble       | 0.243 |
+| SVM + Blast              | Handcrafted features        | 0.140           |
+| KNN                      | CTD + dipeptide             | 0.138           |
+| KNN + BLAST              | Hybrid similarity           | 0.195           |
+| MLP + ProtBert           | Full class, no filter       | 0.144           |
+| MLP + ProtT5             | Outliers filtering          | 0.208           |
+| MLP + ESM2               | Outliers filtering          | 0.192           |
+| MLP + ESM2 + Regulation  | Embeddings + regularization | 0.195           |
+| Ensemble (BLAST + ESM2)  | Branch bonus ensemble       | 0.243           |
 | Ensemble (BLAST + ProtT5)| Branch bonus ensemble       | **Best score: 0.252** |
