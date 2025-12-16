@@ -1,0 +1,10 @@
+.env
+.venv
+.vscode
+
+__pycache__
+*/__pycache__
+submission.tsv
+
+./blast/ncbi*
+/data
